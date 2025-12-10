@@ -15,7 +15,7 @@ public class NotificationGrpcClient {
 
     public NotificationGrpcClient() {
         this.channel = ManagedChannelBuilder
-                .forAddress("localhost", 9090)
+                .forAddress("localhost", 9091)
                 .usePlaintext()
                 .build();
         this.stub = NotificationServiceGrpc.newBlockingStub(channel);

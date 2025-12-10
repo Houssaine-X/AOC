@@ -97,6 +97,7 @@ public class OrderService {
         return convertToResponse(updatedOrder);
     }
 
+    @Transactional
     public List<OrderResponse> getAllOrders() {
         return orderRepository.findAll().stream()
                 .map(this::convertToResponse)

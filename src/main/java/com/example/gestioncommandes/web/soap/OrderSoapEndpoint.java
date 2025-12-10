@@ -22,6 +22,7 @@ public class OrderSoapEndpoint {
 
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "getOrderRequest")
     @ResponsePayload
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public GetOrderResponse getOrder(@RequestPayload GetOrderRequest request) {
         com.example.gestioncommandes.dto.OrderResponse order = orderService.getOrderById(request.getOrderId());
 
@@ -32,6 +33,7 @@ public class OrderSoapEndpoint {
 
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "getClientOrdersRequest")
     @ResponsePayload
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public GetClientOrdersResponse getClientOrders(@RequestPayload GetClientOrdersRequest request) {
         List<com.example.gestioncommandes.dto.OrderResponse> orders = orderService.getOrdersByClient(request.getClientId());
 

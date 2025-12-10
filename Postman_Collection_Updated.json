@@ -1,0 +1,1068 @@
+﻿{
+	"info": {
+		"_postman_id": "gestion-commandes-2025-v2",
+		"name": "Gestion Commandes Multi-Canaux - Complete Test Suite",
+		"description": "Comprehensive test collection for REST, SOAP, GraphQL, and Spring Data REST APIs\n\n**Updated**: December 10, 2025\n**Ports**: REST/SOAP/GraphQL on 8099, gRPC on 9091\n\n**Test Order**:\n1. Run Spring Data REST tests first (create clients and products)\n2. Then run REST API tests (create orders)\n3. Test GraphQL queries\n4. Test SOAP operations",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8099",
+			"type": "string"
+		},
+		{
+			"key": "grpc_port",
+			"value": "9091",
+			"type": "string"
+		},
+		{
+			"key": "client_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "product_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "order_id",
+			"value": "1",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "0. Setup - Run First",
+			"item": [
+				{
+					"name": "Check Application Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Application is running\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Status is UP\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql(\"UP\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/actuator/health",
+							"host": ["{{base_url}}"],
+							"path": ["actuator", "health"]
+						},
+						"description": "Verify the application is running and healthy"
+					}
+				},
+				{
+					"name": "Setup - Create Test Client 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"client_id\", jsonData.id || 1);",
+									"    pm.test(\"Client created\", function () {",
+									"        pm.response.to.have.status(201);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Jean Dupont\",\n  \"email\": \"jean.dupont@example.com\",\n  \"phone\": \"+33612345678\",\n  \"address\": \"123 Rue de Paris, 75001 Paris\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/data/clients",
+							"host": ["{{base_url}}"],
+							"path": ["api", "data", "clients"]
+						},
+						"description": "Create initial test client"
+					}
+				},
+				{
+					"name": "Setup - Create Test Product 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"product_id\", jsonData.id || 1);",
+									"    pm.test(\"Product created\", function () {",
+									"        pm.response.to.have.status(201);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Laptop Dell XPS 15\",\n  \"description\": \"High-performance laptop with 16GB RAM\",\n  \"price\": 1299.99,\n  \"stockQuantity\": 50,\n  \"category\": \"Informatique\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/data/products",
+							"host": ["{{base_url}}"],
+							"path": ["api", "data", "products"]
+						},
+						"description": "Create initial test product"
+					}
+				},
+				{
+					"name": "Setup - Create Test Product 2",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"iPhone 15 Pro\",\n  \"description\": \"Latest Apple smartphone\",\n  \"price\": 1199.99,\n  \"stockQuantity\": 100,\n  \"category\": \"Téléphonie\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/data/products",
+							"host": ["{{base_url}}"],
+							"path": ["api", "data", "products"]
+						}
+					}
+				}
+			],
+			"description": "Setup requests to create initial test data. Run these first!"
+		},
+		{
+			"name": "1. REST API - Orders",
+			"item": [
+				{
+					"name": "Create Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Order created successfully\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"order_id\", jsonData.id);",
+									"    ",
+									"    pm.test(\"Order has valid ID\", function () {",
+									"        pm.expect(jsonData.id).to.be.a('number');",
+									"    });",
+									"    ",
+									"    pm.test(\"Order has status\", function () {",
+									"        pm.expect(jsonData.status).to.exist;",
+									"    });",
+									"    ",
+									"    pm.test(\"Order has items\", function () {",
+									"        pm.expect(jsonData.items).to.be.an('array');",
+									"        pm.expect(jsonData.items.length).to.be.above(0);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"clientId\": {{client_id}},\n  \"source\": \"e-commerce\",\n  \"items\": [\n    {\n      \"productId\": 1,\n      \"quantity\": 2\n    },\n    {\n      \"productId\": 2,\n      \"quantity\": 1\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/rest/orders",
+							"host": ["{{base_url}}"],
+							"path": ["api", "rest", "orders"]
+						},
+						"description": "Create a new order with multiple items via REST API"
+					}
+				},
+				{
+					"name": "Get All Orders",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is an array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/rest/orders",
+							"host": ["{{base_url}}"],
+							"path": ["api", "rest", "orders"]
+						},
+						"description": "Retrieve all orders"
+					}
+				},
+				{
+					"name": "Get Order by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Order details are correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.eql(parseInt(pm.collectionVariables.get(\"order_id\")));",
+									"    pm.expect(jsonData).to.have.property('client');",
+									"    pm.expect(jsonData).to.have.property('items');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/rest/orders/{{order_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "rest", "orders", "{{order_id}}"]
+						},
+						"description": "Get a specific order by ID"
+					}
+				},
+				{
+					"name": "Get Orders by Client ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Orders belong to client\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    if (jsonData.length > 0) {",
+									"        jsonData.forEach(function(order) {",
+									"            pm.expect(order.client.id).to.eql(parseInt(pm.collectionVariables.get(\"client_id\")));",
+									"        });",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/rest/orders/client/{{client_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "rest", "orders", "client", "{{client_id}}"]
+						},
+						"description": "Get all orders for a specific client"
+					}
+				},
+				{
+					"name": "Calculate Order Total",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Total is a valid number\", function () {",
+									"    var total = pm.response.json();",
+									"    pm.expect(total).to.be.a('number');",
+									"    pm.expect(total).to.be.above(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/rest/orders/{{order_id}}/total",
+							"host": ["{{base_url}}"],
+							"path": ["api", "rest", "orders", "{{order_id}}", "total"]
+						},
+						"description": "Calculate total amount for an order"
+					}
+				},
+				{
+					"name": "Update Order Status to CONFIRMED",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status updated successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"New status is CONFIRMED\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql(\"CONFIRMED\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/rest/orders/{{order_id}}/status?status=CONFIRMED",
+							"host": ["{{base_url}}"],
+							"path": ["api", "rest", "orders", "{{order_id}}", "status"],
+							"query": [
+								{
+									"key": "status",
+									"value": "CONFIRMED"
+								}
+							]
+						},
+						"description": "Update order status to CONFIRMED"
+					}
+				},
+				{
+					"name": "Update Order Status to SHIPPED",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/rest/orders/{{order_id}}/status?status=SHIPPED",
+							"host": ["{{base_url}}"],
+							"path": ["api", "rest", "orders", "{{order_id}}", "status"],
+							"query": [
+								{
+									"key": "status",
+									"value": "SHIPPED",
+									"description": "Available: PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED"
+								}
+							]
+						},
+						"description": "Update order status to SHIPPED"
+					}
+				}
+			],
+			"description": "REST API endpoints for order management"
+		},
+		{
+			"name": "2. Spring Data REST",
+			"item": [
+				{
+					"name": "Clients",
+					"item": [
+						{
+							"name": "Get All Clients",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Response has HAL format\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData).to.have.property('_embedded');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/data/clients",
+									"host": ["{{base_url}}"],
+									"path": ["api", "data", "clients"]
+								},
+								"description": "Get all clients using Spring Data REST"
+							}
+						},
+						{
+							"name": "Get Client by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/data/clients/{{client_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "data", "clients", "{{client_id}}"]
+								}
+							}
+						},
+						{
+							"name": "Create Client",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Marie Martin\",\n  \"email\": \"marie.martin@example.com\",\n  \"phone\": \"+33698765432\",\n  \"address\": \"456 Avenue des Champs, 69000 Lyon\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/data/clients",
+									"host": ["{{base_url}}"],
+									"path": ["api", "data", "clients"]
+								}
+							}
+						},
+						{
+							"name": "Search Client by Email",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/data/clients/search/findByEmail?email=jean.dupont@example.com",
+									"host": ["{{base_url}}"],
+									"path": ["api", "data", "clients", "search", "findByEmail"],
+									"query": [
+										{
+											"key": "email",
+											"value": "jean.dupont@example.com"
+										}
+									]
+								},
+								"description": "Search for a client by email address"
+							}
+						}
+					],
+					"description": "Client CRUD operations via Spring Data REST"
+				},
+				{
+					"name": "Products",
+					"item": [
+						{
+							"name": "Get All Products",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/data/products",
+									"host": ["{{base_url}}"],
+									"path": ["api", "data", "products"]
+								},
+								"description": "Get all products using Spring Data REST"
+							}
+						},
+						{
+							"name": "Get Product by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/data/products/{{product_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "data", "products", "{{product_id}}"]
+								}
+							}
+						},
+						{
+							"name": "Create Product",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Samsung Galaxy S24\",\n  \"description\": \"Latest Android flagship phone\",\n  \"price\": 899.99,\n  \"stockQuantity\": 75,\n  \"category\": \"Téléphonie\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/data/products",
+									"host": ["{{base_url}}"],
+									"path": ["api", "data", "products"]
+								}
+							}
+						},
+						{
+							"name": "Update Product",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Laptop Dell XPS 15\",\n  \"description\": \"High-performance laptop with 32GB RAM - UPDATED\",\n  \"price\": 1399.99,\n  \"stockQuantity\": 45,\n  \"category\": \"Informatique\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/data/products/{{product_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "data", "products", "{{product_id}}"]
+								}
+							}
+						},
+						{
+							"name": "Search Products by Category",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/data/products/search/findByCategory?category=Informatique",
+									"host": ["{{base_url}}"],
+									"path": ["api", "data", "products", "search", "findByCategory"],
+									"query": [
+										{
+											"key": "category",
+											"value": "Informatique"
+										}
+									]
+								},
+								"description": "Search products by category"
+							}
+						}
+					],
+					"description": "Product CRUD operations via Spring Data REST"
+				},
+				{
+					"name": "Orders",
+					"item": [
+						{
+							"name": "Get All Orders (Data REST)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/data/orders",
+									"host": ["{{base_url}}"],
+									"path": ["api", "data", "orders"]
+								}
+							}
+						},
+						{
+							"name": "Get Order by ID (Data REST)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/data/orders/{{order_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "data", "orders", "{{order_id}}"]
+								}
+							}
+						}
+					],
+					"description": "Order operations via Spring Data REST"
+				}
+			],
+			"description": "Spring Data REST auto-generated CRUD endpoints with HAL+JSON format"
+		},
+		{
+			"name": "3. GraphQL API",
+			"item": [
+				{
+					"name": "Clients",
+					"item": [
+						{
+							"name": "Get All Clients",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"GraphQL response has data\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData).to.have.property('data');",
+											"    pm.expect(jsonData.data).to.have.property('getAllClients');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"query\": \"query { getAllClients { id name email phone address } }\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/graphql",
+									"host": ["{{base_url}}"],
+									"path": ["graphql"]
+								},
+								"description": "GraphQL query to get all clients with their details"
+							}
+						},
+						{
+							"name": "Get Client by ID",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"query\": \"query { getClient(id: {{client_id}}) { id name email phone address } }\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/graphql",
+									"host": ["{{base_url}}"],
+									"path": ["graphql"]
+								}
+							}
+						}
+					],
+					"description": "GraphQL queries for client data"
+				},
+				{
+					"name": "Products",
+					"item": [
+						{
+							"name": "Get All Products",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"query\": \"query { getAllProducts { id name description price stockQuantity category } }\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/graphql",
+									"host": ["{{base_url}}"],
+									"path": ["graphql"]
+								}
+							}
+						},
+						{
+							"name": "Get Product by ID",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"query\": \"query { getProduct(id: {{product_id}}) { id name description price stockQuantity category } }\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/graphql",
+									"host": ["{{base_url}}"],
+									"path": ["graphql"]
+								}
+							}
+						}
+					],
+					"description": "GraphQL queries for product data"
+				},
+				{
+					"name": "Orders",
+					"item": [
+						{
+							"name": "Get All Orders",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"query\": \"query { getAllOrders { id orderDate status totalAmount source client { id name email } items { id quantity unitPrice subtotal product { id name price } } } }\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/graphql",
+									"host": ["{{base_url}}"],
+									"path": ["graphql"]
+								},
+								"description": "Get all orders with full details including client and items"
+							}
+						},
+						{
+							"name": "Get Order by ID",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"query\": \"query { getOrder(id: {{order_id}}) { id orderDate status totalAmount source client { id name email phone } items { id quantity unitPrice subtotal product { id name description price } } } }\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/graphql",
+									"host": ["{{base_url}}"],
+									"path": ["graphql"]
+								}
+							}
+						},
+						{
+							"name": "Get Orders by Client ID",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"query\": \"query { getClientOrders(clientId: {{client_id}}) { id orderDate status totalAmount items { id quantity unitPrice product { name price } } } }\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/graphql",
+									"host": ["{{base_url}}"],
+									"path": ["graphql"]
+								}
+							}
+						},
+						{
+							"name": "Get Orders by Status",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"query\": \"query { getAllOrders(status: \\\"PENDING\\\") { id orderDate status totalAmount client { name email } } }\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/graphql",
+									"host": ["{{base_url}}"],
+									"path": ["graphql"]
+								},
+								"description": "Filter orders by status (PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED)"
+							}
+						},
+						{
+							"name": "Calculate Client Total Spent",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"query\": \"query { getOrderTotal(clientId: {{client_id}}) }\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/graphql",
+									"host": ["{{base_url}}"],
+									"path": ["graphql"]
+								},
+								"description": "Calculate total amount spent by a client across all their orders"
+							}
+						},
+						{
+							"name": "Complex Query - Full Order Details",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"query\": \"query GetCompleteOrderInfo($clientId: ID!) { client: getClient(id: $clientId) { id name email phone address } orders: getClientOrders(clientId: $clientId) { id orderDate status totalAmount source } }\",\n  \"variables\": {\n    \"clientId\": {{client_id}}\n  }\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/graphql",
+									"host": ["{{base_url}}"],
+									"path": ["graphql"]
+								},
+								"description": "Complex query demonstrating GraphQL's power - fetching client with all orders and calculating total spent in one request"
+							}
+						}
+					],
+					"description": "GraphQL queries for order data"
+				}
+			],
+			"description": "GraphQL API for flexible, efficient queries with exactly the data you need"
+		},
+		{
+			"name": "4. SOAP Web Service",
+			"item": [
+				{
+					"name": "Get WSDL",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/ws/orders.wsdl",
+							"host": ["{{base_url}}"],
+							"path": ["ws", "orders.wsdl"]
+						},
+						"description": "Retrieve the WSDL (Web Service Definition Language) for the SOAP service"
+					}
+				},
+				{
+					"name": "Create Order (SOAP)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "text/xml"
+							},
+							{
+								"key": "SOAPAction",
+								"value": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"\n                  xmlns:tns=\"http://example.com/gestioncommandes/soap\">\n    <soapenv:Header/>\n    <soapenv:Body>\n        <tns:createOrderRequest>\n            <tns:clientId>{{client_id}}</tns:clientId>\n            <tns:source>mobile-app</tns:source>\n            <tns:items>\n                <tns:productId>1</tns:productId>\n                <tns:quantity>3</tns:quantity>\n            </tns:items>\n            <tns:items>\n                <tns:productId>2</tns:productId>\n                <tns:quantity>1</tns:quantity>\n            </tns:items>\n        </tns:createOrderRequest>\n    </soapenv:Body>\n</soapenv:Envelope>"
+						},
+						"url": {
+							"raw": "{{base_url}}/ws",
+							"host": ["{{base_url}}"],
+							"path": ["ws"]
+						},
+						"description": "Create a new order via SOAP web service"
+					}
+				},
+				{
+					"name": "Get Order by ID (SOAP)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "text/xml"
+							},
+							{
+								"key": "SOAPAction",
+								"value": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"\n                  xmlns:tns=\"http://example.com/gestioncommandes/soap\">\n    <soapenv:Header/>\n    <soapenv:Body>\n        <tns:getOrderRequest>\n            <tns:orderId>{{order_id}}</tns:orderId>\n        </tns:getOrderRequest>\n    </soapenv:Body>\n</soapenv:Envelope>"
+						},
+						"url": {
+							"raw": "{{base_url}}/ws",
+							"host": ["{{base_url}}"],
+							"path": ["ws"]
+						},
+						"description": "Retrieve order details by ID via SOAP"
+					}
+				},
+				{
+					"name": "Get Orders by Client (SOAP)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "text/xml"
+							},
+							{
+								"key": "SOAPAction",
+								"value": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"\n                  xmlns:tns=\"http://example.com/gestioncommandes/soap\">\n    <soapenv:Header/>\n    <soapenv:Body>\n        <tns:getClientOrdersRequest>\n            <tns:clientId>{{client_id}}</tns:clientId>\n        </tns:getClientOrdersRequest>\n    </soapenv:Body>\n</soapenv:Envelope>"
+						},
+						"url": {
+							"raw": "{{base_url}}/ws",
+							"host": ["{{base_url}}"],
+							"path": ["ws"]
+						},
+						"description": "Get all orders for a specific client via SOAP"
+					}
+				},
+				{
+					"name": "Update Order Status (SOAP)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "text/xml"
+							},
+							{
+								"key": "SOAPAction",
+								"value": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"\n                  xmlns:tns=\"http://example.com/gestioncommandes/soap\">\n    <soapenv:Header/>\n    <soapenv:Body>\n        <tns:updateOrderStatusRequest>\n            <tns:orderId>{{order_id}}</tns:orderId>\n            <tns:status>DELIVERED</tns:status>\n        </tns:updateOrderStatusRequest>\n    </soapenv:Body>\n</soapenv:Envelope>"
+						},
+						"url": {
+							"raw": "{{base_url}}/ws",
+							"host": ["{{base_url}}"],
+							"path": ["ws"]
+						},
+						"description": "Update order status via SOAP (PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED)"
+					}
+				}
+			],
+			"description": "SOAP web service endpoints for legacy system compatibility"
+		},
+		{
+			"name": "5. System & Tools",
+			"item": [
+				{
+					"name": "H2 Console",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/h2-console",
+							"host": ["{{base_url}}"],
+							"path": ["h2-console"]
+						},
+						"description": "Access H2 database console (open in browser)\n\nConnection settings:\n- JDBC URL: jdbc:h2:mem:ordersdb\n- User: sa\n- Password: (leave empty)"
+					}
+				},
+				{
+					"name": "GraphiQL Interface",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/graphiql",
+							"host": ["{{base_url}}"],
+							"path": ["graphiql"]
+						},
+						"description": "Access GraphiQL interactive GraphQL interface (open in browser)"
+					}
+				},
+				{
+					"name": "Spring Data REST Root",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/data",
+							"host": ["{{base_url}}"],
+							"path": ["api", "data"]
+						},
+						"description": "Discover all Spring Data REST endpoints"
+					}
+				}
+			],
+			"description": "System resources and development tools"
+		}
+	]
+}
+
+
+
+
