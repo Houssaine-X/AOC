@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.example.gestioncommandes.grpc";
+option java_outer_classname = "NotificationProto";
+
+package notification;
+
+service NotificationService {
+  rpc NotifyOrderCreated (OrderNotification) returns (NotificationResponse);
+  rpc NotifyOrderStatusChanged (OrderNotification) returns (NotificationResponse);
+}
+
+message OrderNotification {
+  int64 orderId = 1;
+  int64 clientId = 2;
+  string clientName = 3;
+  string status = 4;
+  double totalAmount = 5;
+  string message = 6;
+}
+
+message NotificationResponse {
+  bool success = 1;
+  string message = 2;
+}
+

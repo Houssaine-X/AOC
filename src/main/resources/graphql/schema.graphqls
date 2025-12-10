@@ -1,0 +1,90 @@
+type Query {
+    getOrder(id: ID!): Order
+    getClientOrders(clientId: ID!): [Order!]!
+    getAllOrders: [Order!]!
+    getOrderTotal(id: ID!): Float!
+    getClient(id: ID!): Client
+    getAllClients: [Client!]!
+    getProduct(id: ID!): Product
+    getAllProducts: [Product!]!
+}
+
+type Mutation {
+    createOrder(input: CreateOrderInput!): Order!
+    updateOrderStatus(orderId: ID!, status: OrderStatus!): Order!
+    createClient(input: CreateClientInput!): Client!
+    createProduct(input: CreateProductInput!): Product!
+}
+
+input CreateOrderInput {
+    clientId: ID!
+    source: String!
+    items: [OrderItemInput!]!
+}
+
+input OrderItemInput {
+    productId: ID!
+    quantity: Int!
+}
+
+input CreateClientInput {
+    name: String!
+    email: String!
+    phone: String
+    address: String
+}
+
+input CreateProductInput {
+    name: String!
+    description: String
+    price: Float!
+    stockQuantity: Int!
+    category: String
+}
+
+type Order {
+    id: ID!
+    clientId: ID!
+    clientName: String!
+    orderDate: String!
+    status: OrderStatus!
+    totalAmount: Float!
+    source: String!
+    items: [OrderItem!]!
+}
+
+type OrderItem {
+    id: ID!
+    productId: ID!
+    productName: String!
+    quantity: Int!
+    unitPrice: Float!
+    subtotal: Float!
+}
+
+type Client {
+    id: ID!
+    name: String!
+    email: String!
+    phone: String
+    address: String
+}
+
+type Product {
+    id: ID!
+    name: String!
+    description: String
+    price: Float!
+    stockQuantity: Int!
+    category: String
+}
+
+enum OrderStatus {
+    PENDING
+    CONFIRMED
+    PROCESSING
+    SHIPPED
+    DELIVERED
+    CANCELLED
+}
+
