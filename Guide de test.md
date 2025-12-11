@@ -581,6 +581,237 @@ public class GrpcManualTest {
 }
 ```
 
+### ✅ Method 5: Testing via Console (Easiest Way!)
+
+**YES!** You can see gRPC notifications directly in your application console. This is the **simplest method** - no additional tools needed!
+
+#### How It Works
+
+When you create or update an order through **any channel** (REST, SOAP, GraphQL), the application automatically:
+1. Creates the order
+2. Sends a gRPC notification
+3. **Logs the notification details to the console**
+
+#### Step-by-Step Console Testing
+
+**Step 1: Start the Application**
+```powershell
+mvn spring-boot:run
+```
+
+**Step 2: Watch for gRPC Startup Messages**
+```
+gRPC Server started, listening on address: 0.0.0.0, port: 9091
+Registered gRPC service: notification.NotificationService
+```
+
+**Step 3: Create an Order (Choose Any Method)**
+
+**Option A - Using REST API:**
+```powershell
+$orderData = @{
+    clientId = 1
+    items = @(
+        @{ productId = 1; quantity = 2 }
+    )
+} | ConvertTo-Json
+
+Invoke-WebRequest `
+    -Uri "http://localhost:8099/api/rest/orders" `
+    -Method POST `
+    -ContentType "application/json" `
+    -Body $orderData
+```
+
+**Option B - Using GraphQL:**
+```powershell
+$query = @{
+    query = "mutation { createOrder(input: { clientId: 1, items: [{ productId: 1, quantity: 2 }] }) { id clientName status totalAmount } }"
+} | ConvertTo-Json
+
+Invoke-WebRequest `
+    -Uri "http://localhost:8099/graphql" `
+    -Method POST `
+    -ContentType "application/json" `
+    -Body $query
+```
+
+**Option C - Using SOAP:**
+```powershell
+$soapRequest = @"
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:tns="http://example.com/gestioncommandes/soap">
+    <soapenv:Body>
+        <tns:createOrderRequest>
+            <tns:clientId>1</tns:clientId>
+            <tns:items>
+                <tns:productId>1</tns:productId>
+                <tns:quantity>2</tns:quantity>
+            </tns:items>
+        </tns:createOrderRequest>
+    </soapenv:Body>
+</soapenv:Envelope>
+"@
+
+Invoke-WebRequest `
+    -Uri "http://localhost:8099/ws" `
+    -Method POST `
+    -ContentType "text/xml" `
+    -Body $soapRequest
+```
+
+**Step 4: Check Console Output**
+
+You will see detailed notification logs like this:
+
+```
+=== Order Created Notification ===
+Order ID: 1
+Client: Jean Dupont (ID: 1)
+Total Amount: $1299.99
+Status: PENDING
+Message: New order created successfully
+===================================
+gRPC Notification sent: Order creation notification sent successfully
+```
+
+#### What You'll See in the Console
+
+**When Creating an Order:**
+```
+INFO  - Order created with ID: 1
+INFO  - === Order Created Notification ===
+INFO  - Order ID: 1
+INFO  - Client: Jean Dupont (ID: 1)
+INFO  - Total Amount: $1299.99
+INFO  - Status: PENDING
+INFO  - Message: New order created successfully
+INFO  - ===================================
+INFO  - gRPC Notification sent: Order creation notification sent successfully
+```
+
+**When Updating Order Status:**
+```
+INFO  - Order status updated to: SHIPPED
+INFO  - === Order Status Changed Notification ===
+INFO  - Order ID: 1
+INFO  - Client: Jean Dupont (ID: 1)
+INFO  - New Status: SHIPPED
+INFO  - Message: Order status updated to: SHIPPED
+INFO  - =========================================
+INFO  - gRPC Notification sent: Status change notification sent successfully
+```
+
+#### Testing Status Updates (Also Triggers Notifications)
+
+```powershell
+# Update order status via REST
+Invoke-WebRequest `
+    -Uri "http://localhost:8099/api/rest/orders/1/status?status=SHIPPED" `
+    -Method PATCH
+```
+
+**Console Output:**
+```
+=== Order Status Changed Notification ===
+Order ID: 1
+Client: Jean Dupont (ID: 1)
+New Status: SHIPPED
+Message: Order status updated to: SHIPPED
+=========================================
+```
+
+#### Console Notification Examples for Each Status
+
+**PENDING → CONFIRMED:**
+```
+INFO  - === Order Status Changed Notification ===
+INFO  - Order ID: 5
+INFO  - Client: Marie Martin (ID: 2)
+INFO  - New Status: CONFIRMED
+INFO  - Message: Order status updated to: CONFIRMED
+```
+
+**CONFIRMED → PROCESSING:**
+```
+INFO  - === Order Status Changed Notification ===
+INFO  - Order ID: 5
+INFO  - New Status: PROCESSING
+INFO  - Message: Order is being processed
+```
+
+**PROCESSING → SHIPPED:**
+```
+INFO  - === Order Status Changed Notification ===
+INFO  - Order ID: 5
+INFO  - New Status: SHIPPED
+INFO  - Message: Order has been shipped
+```
+
+**SHIPPED → DELIVERED:**
+```
+INFO  - === Order Status Changed Notification ===
+INFO  - Order ID: 5
+INFO  - New Status: DELIVERED
+INFO  - Message: Order has been delivered
+```
+
+#### Why Console Testing is Great
+
+✅ **No additional tools needed** - just your terminal  
+✅ **Real-time feedback** - see notifications instantly  
+✅ **Complete information** - all notification details displayed  
+✅ **Works with all channels** - REST, SOAP, GraphQL, gRPC  
+✅ **Perfect for demos** - easy to show during interviews  
+
+#### Quick Test Script (Create & Update Order)
+
+```powershell
+# 1. Create an order
+Write-Host "Creating order..." -ForegroundColor Green
+$order = @{ clientId = 1; items = @(@{ productId = 1; quantity = 2 }) } | ConvertTo-Json
+$response = Invoke-WebRequest -Uri "http://localhost:8099/api/rest/orders" -Method POST -ContentType "application/json" -Body $order
+$orderId = ($response.Content | ConvertFrom-Json).id
+Write-Host "Order $orderId created - Check console for notification!" -ForegroundColor Yellow
+
+Start-Sleep -Seconds 2
+
+# 2. Update status to CONFIRMED
+Write-Host "Updating to CONFIRMED..." -ForegroundColor Green
+Invoke-WebRequest -Uri "http://localhost:8099/api/rest/orders/$orderId/status?status=CONFIRMED" -Method PATCH
+Write-Host "Status updated - Check console for notification!" -ForegroundColor Yellow
+
+Start-Sleep -Seconds 2
+
+# 3. Update status to SHIPPED
+Write-Host "Updating to SHIPPED..." -ForegroundColor Green
+Invoke-WebRequest -Uri "http://localhost:8099/api/rest/orders/$orderId/status?status=SHIPPED" -Method PATCH
+Write-Host "Status updated - Check console for notification!" -ForegroundColor Yellow
+
+Write-Host "`nCheck your application console to see all 3 notifications!" -ForegroundColor Cyan
+```
+
+**Expected Console Output:**
+```
+=== Order Created Notification ===
+Order ID: 6
+Client: Jean Dupont (ID: 1)
+Total Amount: $2599.98
+Status: PENDING
+...
+
+=== Order Status Changed Notification ===
+Order ID: 6
+New Status: CONFIRMED
+...
+
+=== Order Status Changed Notification ===
+Order ID: 6
+New Status: SHIPPED
+...
+```
+
 ### Automatic gRPC Notifications
 
 When you create an order via REST, SOAP, or GraphQL, the application **automatically sends a gRPC notification**.

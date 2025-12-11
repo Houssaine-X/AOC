@@ -3,6 +3,7 @@ package com.example.gestioncommandes.service;
 import com.example.gestioncommandes.dto.CreateOrderRequest;
 import com.example.gestioncommandes.dto.OrderItemResponse;
 import com.example.gestioncommandes.dto.OrderResponse;
+import com.example.gestioncommandes.grpc.NotificationGrpcClient;
 import com.example.gestioncommandes.model.*;
 import com.example.gestioncommandes.repository.ClientRepository;
 import com.example.gestioncommandes.repository.OrderRepository;
@@ -26,6 +27,9 @@ public class OrderService {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private NotificationGrpcClient notificationClient;
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
@@ -67,6 +71,15 @@ public class OrderService {
         order.setTotalAmount(totalAmount);
         Order savedOrder = orderRepository.save(order);
 
+        // Send gRPC notification
+        notificationClient.notifyOrderCreated(
+                savedOrder.getId(),
+                savedOrder.getClient().getId(),
+                savedOrder.getClient().getName(),
+                savedOrder.getStatus().toString(),
+                savedOrder.getTotalAmount().doubleValue()
+        );
+
         return convertToResponse(savedOrder);
     }
 
@@ -94,6 +107,15 @@ public class OrderService {
                 .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
         order.setStatus(newStatus);
         Order updatedOrder = orderRepository.save(order);
+
+        // Send gRPC notification for status change
+        notificationClient.notifyOrderStatusChanged(
+                updatedOrder.getId(),
+                updatedOrder.getClient().getId(),
+                updatedOrder.getClient().getName(),
+                updatedOrder.getStatus().toString()
+        );
+
         return convertToResponse(updatedOrder);
     }
 

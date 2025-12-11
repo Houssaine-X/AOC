@@ -15,13 +15,27 @@ public class NotificationServiceImpl extends NotificationServiceGrpc.Notificatio
 
     @Override
     public void notifyOrderCreated(OrderNotification request, StreamObserver<NotificationResponse> responseObserver) {
-        logger.info("=== Order Created Notification ===");
-        logger.info("Order ID: {}", request.getOrderId());
-        logger.info("Client: {} (ID: {})", request.getClientName(), request.getClientId());
-        logger.info("Total Amount: ${}", request.getTotalAmount());
-        logger.info("Status: {}", request.getStatus());
-        logger.info("Message: {}", request.getMessage());
-        logger.info("===================================");
+        // Format and log the notification
+        String notification = String.format("""
+                
+                ===================================
+                === Order Created Notification ===
+                ===================================
+                Order ID: %d
+                Client: %s (ID: %d)
+                Total Amount: $%.2f
+                Status: %s
+                Message: %s
+                ===================================
+                """,
+                request.getOrderId(),
+                request.getClientName(),
+                request.getClientId(),
+                request.getTotalAmount(),
+                request.getStatus(),
+                request.getMessage());
+
+        logger.info(notification);
 
         // Simulate notification processing (email, SMS, push notification, etc.)
         NotificationResponse response = NotificationResponse.newBuilder()
@@ -35,12 +49,25 @@ public class NotificationServiceImpl extends NotificationServiceGrpc.Notificatio
 
     @Override
     public void notifyOrderStatusChanged(OrderNotification request, StreamObserver<NotificationResponse> responseObserver) {
-        logger.info("=== Order Status Changed Notification ===");
-        logger.info("Order ID: {}", request.getOrderId());
-        logger.info("Client: {} (ID: {})", request.getClientName(), request.getClientId());
-        logger.info("New Status: {}", request.getStatus());
-        logger.info("Message: {}", request.getMessage());
-        logger.info("=========================================");
+        // Format and log the notification
+        String notification = String.format("""
+                
+                =========================================
+                === Order Status Changed Notification ===
+                =========================================
+                Order ID: %d
+                Client: %s (ID: %d)
+                New Status: %s
+                Message: %s
+                =========================================
+                """,
+                request.getOrderId(),
+                request.getClientName(),
+                request.getClientId(),
+                request.getStatus(),
+                request.getMessage());
+
+        logger.info(notification);
 
         // Simulate notification processing
         NotificationResponse response = NotificationResponse.newBuilder()

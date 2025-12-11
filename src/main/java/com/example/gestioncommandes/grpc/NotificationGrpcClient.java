@@ -3,23 +3,14 @@ package com.example.gestioncommandes.grpc;
 import com.example.gestioncommandes.grpc.NotificationResponse;
 import com.example.gestioncommandes.grpc.NotificationServiceGrpc;
 import com.example.gestioncommandes.grpc.OrderNotification;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
+import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Component;
 
 @Component
 public class NotificationGrpcClient {
 
-    private final NotificationServiceGrpc.NotificationServiceBlockingStub stub;
-    private final ManagedChannel channel;
-
-    public NotificationGrpcClient() {
-        this.channel = ManagedChannelBuilder
-                .forAddress("localhost", 9091)
-                .usePlaintext()
-                .build();
-        this.stub = NotificationServiceGrpc.newBlockingStub(channel);
-    }
+    @GrpcClient("notification")
+    private NotificationServiceGrpc.NotificationServiceBlockingStub stub;
 
     public void notifyOrderCreated(Long orderId, Long clientId, String clientName,
                                    String status, Double totalAmount) {
@@ -54,12 +45,6 @@ public class NotificationGrpcClient {
             System.out.println("gRPC Notification sent: " + response.getMessage());
         } catch (Exception e) {
             System.err.println("Failed to send gRPC notification: " + e.getMessage());
-        }
-    }
-
-    public void shutdown() {
-        if (channel != null) {
-            channel.shutdown();
         }
     }
 }
